@@ -1,5 +1,6 @@
 node_modules
 videos
+videos2
 events
 frames
 web.old
@@ -9,3 +10,7 @@ conf.json
 super.json
 dbdata
 npm-debug.log
+
+/temp/*
+/ffmpeg/*
+/.vscode/*
