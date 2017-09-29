@@ -1,5 +1,6 @@
 var crypto = require('crypto');
 var moment = require('moment');
+var config = require('../Config');
 
 function toLong(ip) {
     var ipl = 0;

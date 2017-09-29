@@ -38,9 +38,13 @@ var jsonfile = require("jsonfile");
 var connectionTester = require('connection-tester');
 var events = require('events');
 var Cam = require('onvif').Cam;
-var config = require('./conf.json');
-var tools = require('./tools');
-
+var remove = require('./tools/remove');
+var location = {}
+location.super = __dirname+'/super.json'
+location.config = __dirname+'/conf.json'
+location.languages = __dirname+'/languages'
+location.definitions = __dirname+'/definitions'
+var config = require(location.config);
 if(!config.productType){
     config.productType='CE'
 }
@@ -51,18 +55,18 @@ if(!config.language){
     config.language='en_CA'
 }
 try{
-    var lang = require('./languages/'+config.language+'.json');
+    var lang = require(location.languages+'/'+config.language+'.json');
 }catch(er){
     console.error(er)
     console.log('There was an error loading your language file.')
-    var lang = require('./languages/en_CA.json');
+    var lang = require(location.languages+'/en_CA.json');
 }
 try{
-    var definitions = require('./definitions/'+config.language+'.json');
+    var definitions = require(location.definitions+'/'+config.language+'.json');
 }catch(er){
     console.error(er)
     console.log('There was an error loading your language file.')
-    var definitions = require('./definitions/en_CA.json');
+    var definitions = require(location.definitions+'/en_CA.json');
 }
 process.send = process.send || function () {};
 if(config.mail){
@@ -90,7 +94,7 @@ s.getLanguageFile=function(rule){
         var file=s.loadedLanguages[file]
         if(!file){
             try{
-                s.loadedLanguages[rule]=require('./languages/'+rule+'.json')
+                s.loadedLanguages[rule]=require(location.languages+'/'+rule+'.json')
                 file=s.loadedLanguages[rule]
             }catch(err){
                 file=lang
@@ -109,7 +113,7 @@ s.getDefinitonFile=function(rule){
         var file=s.loadedDefinitons[file]
         if(!file){
             try{
-                s.loadedDefinitons[rule]=require('./definitions/'+rule+'.json')
+                s.loadedDefinitons[rule]=require(location.definitions+'/'+rule+'.json')
                 file=s.loadedDefinitons[rule]
             }catch(err){
                 file=definitions
@@ -375,7 +379,7 @@ s.dir={
     videos:s.checkCorrectPathEnding(config.videosDir),
     streams:s.checkCorrectPathEnding(config.streamDir),
     addStorage:config.addStorage,
-    languages:'./languages/'
+    languages:location.languages+'/'
 };
 //streams dir
 if(!fs.existsSync(s.dir.streams)){
@@ -1061,7 +1065,7 @@ s.file=function(x,e){
             // return exec('rm -f '+e,{detached: true});
             if (filePath[filePath.length - 1] === '*') {
                 filePath = path.dirname(filePath);
-                var result = tools.rmDir(filePath, false);
+                var result = remove.rmDir(filePath, false);
                 if (result) {
                     console.log('Delete Success: ' + filePath);
                 } else {
@@ -1810,70 +1814,92 @@ io.on('connection', function (cn) {
         if(!cn.ke&&d.f==='init'){//socket login
             cn.ip=cn.request.connection.remoteAddress;
             tx=function(z){if(!z.ke){z.ke=cn.ke;};cn.emit('f',z);}
+            d.failed=function(){tx({ok:false,msg:'Not Authorized',token_used:d.auth,ke:d.ke});cn.disconnect();}
+            d.success=function(r){
+                r=r[0];cn.join('GRP_'+d.ke);cn.join('CPU');
+                cn.ke=d.ke,
+                cn.uid=d.uid,
+                cn.auth=d.auth;
+                if(!s.group[d.ke])s.group[d.ke]={};
+                // if(!s.group[d.ke].vid)s.group[d.ke].vid={};
+                if(!s.group[d.ke].users)s.group[d.ke].users={};
+                // s.group[d.ke].vid[cn.id]={uid:d.uid};
+                s.group[d.ke].users[d.auth]={cnid:cn.id,uid:r.uid,mail:r.mail,details:JSON.parse(r.details),logged_in_at:moment(new Date).format(),login_type:'Dashboard'}
+                try{s.group[d.ke].users[d.auth].details=JSON.parse(r.details)}catch(er){}
+                if(s.group[d.ke].users[d.auth].details.get_server_log&&s.group[d.ke].users[d.auth].details.get_server_log!=='0'){
+                    cn.join('GRPLOG_'+d.ke)
+                }
+                s.group[d.ke].users[d.auth].lang=s.getLanguageFile(s.group[d.ke].users[d.auth].details.lang)
+                s.log({ke:d.ke,mid:'$USER'},{type:s.group[d.ke].users[d.auth].lang['Websocket Connected'],msg:{mail:r.mail,id:d.uid,ip:cn.ip}})
+                if(!s.group[d.ke].mon){
+                    s.group[d.ke].mon={}
+                    if(!s.group[d.ke].mon){s.group[d.ke].mon={}}
+                }
+                if(s.ocv){
+                    tx({f:'detector_plugged',plug:s.ocv.plug,notice:s.ocv.notice})
+                    s.tx({f:'readPlugins',ke:d.ke},s.ocv.id)
+                }
+                tx({f:'users_online',users:s.group[d.ke].users})
+                s.tx({f:'user_status_change',ke:d.ke,uid:cn.uid,status:1,user:s.group[d.ke].users[d.auth]},'GRP_'+d.ke)
+                s.init('diskUsed',d)
+                s.init('apps',d)
+                sql.query('SELECT * FROM API WHERE ke=? && uid=?',[d.ke,d.uid],function(err,rrr) {
+                    tx({
+                        f:'init_success',
+                        users:s.group[d.ke].vid,
+                        apis:rrr,
+                        os:{
+                            platform:s.platform,
+                            cpuCount:os.cpus().length,
+                            totalmem:s.totalmem
+                        }
+                    })
+                    http.get('http://'+config.ip+':'+config.port+'/'+cn.auth+'/monitor/'+cn.ke, function(res){
+                        var body = '';
+                        res.on('data', function(chunk){
+                            body += chunk;
+                        });
+                        res.on('end', function(){
+                            var rr = JSON.parse(body);
+                            setTimeout(function(g){
+                                g=function(t){
+                                    s.camera('snapshot',{mid:t.mid,ke:t.ke,mon:t})
+                                }
+                                if(rr.mid){
+                                    g(rr)
+                                }else{
+                                    rr.forEach(g)
+                                }
+                            },2000)
+                        });
+                    }).on('error', function(e){
+                        // s.systemLog("Get Snapshot Error", e);
+                    });
+                })
+            }
             sql.query('SELECT ke,uid,auth,mail,details FROM Users WHERE ke=? AND auth=? AND uid=?',[d.ke,d.auth,d.uid],function(err,r) {
                 if(r&&r[0]){
-                    r=r[0];cn.join('GRP_'+d.ke);cn.join('CPU');
-                    cn.ke=d.ke,
-                    cn.uid=d.uid,
-                    cn.auth=d.auth;
-                    if(!s.group[d.ke])s.group[d.ke]={};
-                    // if(!s.group[d.ke].vid)s.group[d.ke].vid={};
-                    if(!s.group[d.ke].users)s.group[d.ke].users={};
-                    // s.group[d.ke].vid[cn.id]={uid:d.uid};
-                    s.group[d.ke].users[d.auth]={cnid:cn.id,uid:r.uid,mail:r.mail,details:JSON.parse(r.details),logged_in_at:moment(new Date).format(),login_type:'Dashboard'}
-                    try{s.group[d.ke].users[d.auth].details=JSON.parse(r.details)}catch(er){}
-                    if(s.group[d.ke].users[d.auth].details.get_server_log&&s.group[d.ke].users[d.auth].details.get_server_log!=='0'){
-                        cn.join('GRPLOG_'+d.ke)
-                    }
-                    s.group[d.ke].users[d.auth].lang=s.getLanguageFile(s.group[d.ke].users[d.auth].details.lang)
-                    s.log({ke:d.ke,mid:'$USER'},{type:s.group[d.ke].users[d.auth].lang['Websocket Connected'],msg:{mail:r.mail,id:d.uid,ip:cn.ip}})
-                    if(!s.group[d.ke].mon){
-                        s.group[d.ke].mon={}
-                        if(!s.group[d.ke].mon){s.group[d.ke].mon={}}
-                    }
-                    if(s.ocv){
-                        tx({f:'detector_plugged',plug:s.ocv.plug,notice:s.ocv.notice})
-                        s.tx({f:'readPlugins',ke:d.ke},s.ocv.id)
-                    }
-                    tx({f:'users_online',users:s.group[d.ke].users})
-                    s.tx({f:'user_status_change',ke:d.ke,uid:cn.uid,status:1,user:s.group[d.ke].users[d.auth]},'GRP_'+d.ke)
-                    s.init('diskUsed',d)
-                    s.init('apps',d)
-                    sql.query('SELECT * FROM API WHERE ke=? && uid=?',[d.ke,d.uid],function(err,rrr) {
-                        tx({
-                            f:'init_success',
-                            users:s.group[d.ke].vid,
-                            apis:rrr,
-                            os:{
-                                platform:s.platform,
-                                cpuCount:os.cpus().length,
-                                totalmem:s.totalmem
-                            }
-                        })
-                        http.get('http://'+config.ip+':'+config.port+'/'+cn.auth+'/monitor/'+cn.ke, function(res){
-                            var body = '';
-                            res.on('data', function(chunk){
-                                body += chunk;
-                            });
-                            res.on('end', function(){
-                                var rr = JSON.parse(body);
-                                setTimeout(function(g){
-                                    g=function(t){
-                                        s.camera('snapshot',{mid:t.mid,ke:t.ke,mon:t})
-                                    }
-                                    if(rr.mid){
-                                        g(rr)
-                                    }else{
-                                        rr.forEach(g)
-                                    }
-                                },2000)
-                            });
-                        }).on('error', function(e){
-                            // s.systemLog("Get Snapshot Error", e);
-                        });
-                    })
+                    d.success(r)
                 }else{
-                    tx({ok:false,msg:'Not Authorized',token_used:d.auth,ke:d.ke});cn.disconnect();
+                    sql.query('SELECT * FROM API WHERE ke=? AND code=? AND uid=?',[d.ke,d.auth,d.uid],function(err,r) {
+                        if(r&&r[0]){
+                            r=r[0]
+                            r.details=JSON.parse(r.details)
+                            if(r.details.auth_socket==='1'){
+                                sql.query('SELECT ke,uid,auth,mail,details FROM Users WHERE ke=? AND uid=?',[r.ke,r.uid],function(err,r) {
+                                    if(r&&r[0]){
+                                        d.success(r)
+                                    }else{
+                                        d.failed()
+                                    }
+                                })
+                            }else{
+                                d.failed()
+                            }
+                        }else{
+                            d.failed()
+                        }
+                    })
                 }
             })
             return;
@@ -2276,8 +2302,10 @@ io.on('connection', function (cn) {
     cn.on('ocv',function(d){
         if(!cn.ocv&&d.f==='init'){
             if(config.pluginKeys[d.plug]===d.pluginKey){
+                s.api[cn.id]={ocvID:cn.id,permissions:{},details:{},ip:'0.0.0.0'};
                 s.ocv={started:moment(),id:cn.id,plug:d.plug,notice:d.notice};
                 cn.ocv=1;
+                s.tx({f:'api_key',key:cn.id},cn.id)
                 s.tx({f:'detector_plugged',plug:d.plug,notice:d.notice},'CPU')
                 s.tx({f:'readPlugins',ke:d.ke},'CPU')
                 s.systemLog('Connected to plugin : Detector - '+d.plug)
@@ -2391,8 +2419,8 @@ io.on('connection', function (cn) {
                                 }
                             break;
                             case'configure':
-                                s.systemLog('conf.json Modified',{by:cn.mail,ip:cn.ip,old:jsonfile.readFileSync('./conf.json')})
-                                jsonfile.writeFile('./conf.json',d.data,{spaces: 2},function(){
+                                s.systemLog('conf.json Modified',{by:cn.mail,ip:cn.ip,old:jsonfile.readFileSync(location.config)})
+                                jsonfile.writeFile(location.config,d.data,{spaces: 2},function(){
                                     s.tx({f:'save_configuration'},cn.id)
                                 })
                             break;
@@ -2645,6 +2673,7 @@ io.on('connection', function (cn) {
         if(cn.ocv){
             s.tx({f:'detector_unplugged',plug:s.ocv.plug},'CPU')
             delete(s.ocv);
+            delete(s.api[cn.id])
         }
         if(cn.cron){
             delete(s.cron);
@@ -2687,11 +2716,12 @@ s.auth=function(xx,cb,res,req){
             sql.query('SELECT * FROM API WHERE code=? AND ke=?',[xx.auth,xx.ke],function(err,r){
                 if(r&&r[0]){
                     r=r[0];
-                    s.api[xx.auth]={ip:r.ip,uid:r.uid,permissions:JSON.parse(r.details),details:{}};
+                    s.api[xx.auth]={ip:r.ip,uid:r.uid,ke:r.ke,permissions:JSON.parse(r.details),details:{}};
                     sql.query('SELECT details FROM Users WHERE uid=? AND ke=?',[r.uid,r.ke],function(err,rr){
                         if(rr&&rr[0]){
                             rr=rr[0];
                             try{
+                                s.api[xx.auth].mail=rr.mail
                                 s.api[xx.auth].details=JSON.parse(rr.details)
                                 s.api[xx.auth].lang=s.getLanguageFile(s.api[xx.auth].details.lang)
                             }catch(er){}
@@ -2707,7 +2737,7 @@ s.auth=function(xx,cb,res,req){
 }
 s.superAuth=function(x,callback){
     req={};
-    req.super=require('./super.json');
+    req.super=require(location.super);
     if(x.md5===true){
         x.pass=s.md5(x.pass);
     }
@@ -2771,6 +2801,17 @@ app.get('/:auth/update/:key', function (req,res){
     }
     s.auth(req.params,req.fn,res,req);
 });
+//get user details by API key
+app.get('/:auth/userInfo/:ke',function (req,res){
+    req.ret={ok:false};
+    res.setHeader('Content-Type', 'application/json');
+    res.header("Access-Control-Allow-Origin",req.headers.origin);
+    s.auth(req.params,function(user){
+        req.ret.ok=true
+        req.ret.user=user
+        res.end(s.s(req.ret, null, 3));
+    },res,req);
+})
 //register function
 app.post('/:auth/register/:ke/:uid',function (req,res){
     req.resp={ok:false};
@@ -3071,7 +3112,7 @@ app.post(['/','/:screen'],function (req,res){
             })
         }else{
             if(req.body.function==='super'){
-                if(!fs.existsSync('./super.json')){
+                if(!fs.existsSync(location.super)){
                     res.end(lang.superAdminText)
                     return
                 }
@@ -3081,7 +3122,7 @@ app.post(['/','/:screen'],function (req,res){
                             r=[]
                         }
                         data.Logs=r;
-                        fs.readFile('./conf.json','utf8',function(err,file){
+                        fs.readFile(location.config,'utf8',function(err,file){
                             data.plainConfig=JSON.parse(file)
                             req.renderFunction("super",data);
                         })
@@ -3161,6 +3202,7 @@ app.get('/:auth/jpeg/:ke/:id/s.jpg', function(req,res){
 });
 //Get MJPEG stream
 app.get(['/:auth/mjpeg/:ke/:id','/:auth/mjpeg/:ke/:id/:addon'], function(req,res) {
+    res.header("Access-Control-Allow-Origin",req.headers.origin);
     if(req.params.addon=='full'){
         res.render('mjpeg',{url:'/'+req.params.auth+'/mjpeg/'+req.params.ke+'/'+req.params.id});
         res.end()
@@ -3222,6 +3264,7 @@ app.get(['/:auth/embed/:ke/:id','/:auth/embed/:ke/:id/:addon'], function (req,re
 app.get(['/:auth/monitor/:ke','/:auth/monitor/:ke/:id'], function (req,res){
     req.ret={ok:false};
     res.setHeader('Content-Type', 'application/json');
+    res.header("Access-Control-Allow-Origin",req.headers.origin);
     req.fn=function(user){
     if(user.permissions.get_monitors==="0"){
         res.end(s.s([]))
@@ -3254,6 +3297,8 @@ app.get(['/:auth/monitor/:ke','/:auth/monitor/:ke/:id'], function (req,res){
 });
 // Get videos json
 app.get(['/:auth/videos/:ke','/:auth/videos/:ke/:id'], function (req,res){
+    res.setHeader('Content-Type', 'application/json');
+    res.header("Access-Control-Allow-Origin",req.headers.origin);
     s.auth(req.params,function(user){
         if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.video_view.indexOf(req.params.id)===-1){
             res.end(s.s([]))
@@ -3346,6 +3391,7 @@ app.get(['/:auth/videos/:ke','/:auth/videos/:ke/:id'], function (req,res){
 app.get(['/:auth/events/:ke','/:auth/events/:ke/:id','/:auth/events/:ke/:id/:limit','/:auth/events/:ke/:id/:limit/:start','/:auth/events/:ke/:id/:limit/:start/:end'], function (req,res){
     req.ret={ok:false};
     res.setHeader('Content-Type', 'application/json');
+    res.header("Access-Control-Allow-Origin",req.headers.origin);
     s.auth(req.params,function(user){
         if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.video_view.indexOf(req.params.id)===-1){
             res.end(s.s([]))
@@ -3401,6 +3447,7 @@ app.get(['/:auth/events/:ke','/:auth/events/:ke/:id','/:auth/events/:ke/:id/:lim
 app.get(['/:auth/logs/:ke','/:auth/logs/:ke/:id','/:auth/logs/:ke/:limit','/:auth/logs/:ke/:id/:limit'], function (req,res){
     req.ret={ok:false};
     res.setHeader('Content-Type', 'application/json');
+    res.header("Access-Control-Allow-Origin",req.headers.origin);
     s.auth(req.params,function(user){
         if(user.permissions.get_logs==="0"){
             res.end(s.s([]))
@@ -3444,6 +3491,7 @@ app.get(['/:auth/logs/:ke','/:auth/logs/:ke/:id','/:auth/logs/:ke/:limit','/:aut
 app.get('/:auth/smonitor/:ke', function (req,res){
     req.ret={ok:false};
     res.setHeader('Content-Type', 'application/json');
+    res.header("Access-Control-Allow-Origin",req.headers.origin);
     req.fn=function(user){
         if(user.permissions.get_monitors==="0"){
             res.end(s.s([]))
@@ -3478,6 +3526,7 @@ app.get('/:auth/smonitor/:ke', function (req,res){
 app.all(['/:auth/configureMonitor/:ke/:id','/:auth/configureMonitor/:ke/:id/:f'], function (req,res){
     req.ret={ok:false};
     res.setHeader('Content-Type', 'application/json');
+    res.header("Access-Control-Allow-Origin",req.headers.origin);
     s.auth(req.params,function(user){
         if(req.params.f!=='delete'){
             if(!req.body.data&&!req.query.data){
@@ -3496,8 +3545,8 @@ app.all(['/:auth/configureMonitor/:ke/:id','/:auth/configureMonitor/:ke/:id/:f']
                 if(!req.monitor || !req.monitor.details){
                     req.ret.msg=user.lang.monitorEditText1;
                     res.end(s.s(req.ret, null, 3))
-                    return
                 }
+                return
             }
             if(!user.details.sub||user.details.allmonitors==='1'||user.details.monitor_edit.indexOf(req.monitor.mid)>-1){
                     if(req.monitor&&req.monitor.mid&&req.monitor.name){
@@ -3591,6 +3640,7 @@ app.all(['/:auth/configureMonitor/:ke/:id','/:auth/configureMonitor/:ke/:id/:f']
 app.get(['/:auth/monitor/:ke/:id/:f','/:auth/monitor/:ke/:id/:f/:ff','/:auth/monitor/:ke/:id/:f/:ff/:fff'], function (req,res){
     req.ret={ok:false};
     res.setHeader('Content-Type', 'application/json');
+    res.header("Access-Control-Allow-Origin",req.headers.origin);
     s.auth(req.params,function(user){
         if(user.permissions.control_monitors==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitor_edit.indexOf(req.params.id)===-1){
             res.end(user.lang['Not Permitted'])
@@ -3755,6 +3805,7 @@ app.get('/:auth/motion/:ke/:id', function (req,res){
 app.get(['/:auth/videos/:ke/:id/:file/:mode','/:auth/videos/:ke/:id/:file/:mode/:f'], function (req,res){
     req.ret={ok:false};
     res.setHeader('Content-Type', 'application/json');
+    res.header("Access-Control-Allow-Origin",req.headers.origin);
     s.auth(req.params,function(user){
         if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.video_delete.indexOf(req.params.id)===-1){
             res.end(user.lang['Not Permitted'])

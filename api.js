@@ -1,5 +1,6 @@
 var fs = require('fs');
 var exec = require('child_process').exec;
+var CircularJSON = require('circular-json');
 
 var { app, config, s } = require('./app');
 var get = require('./tools/get');
@@ -706,7 +707,7 @@ app.get('/:auth/jpeg/:ke/:id/s.jpg', function(req, res) {
             });
             res.on('finish', function() {
                 res.end();
-                delete res;
+                res = null;
             });
             if (fs.existsSync(req.dir)) {
                 fs.createReadStream(req.dir).pipe(res);
@@ -1361,7 +1362,7 @@ app.all(
                                             user.uid;
                                         db.MonitorManager.addMonitor({
                                             key: req.set.split(','),
-                                            value: req.st,
+                                            value: req.ar,
                                         });
                                         req.finish = 1;
                                     } else {
