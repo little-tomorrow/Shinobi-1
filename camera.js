@@ -39,6 +39,8 @@ var connectionTester = require('connection-tester');
 var events = require('events');
 var Cam = require('onvif').Cam;
 var remove = require('./tools/remove');
+var { get } = require('lodash');
+
 var location = {}
 location.super = __dirname+'/super.json'
 location.config = __dirname+'/conf.json'
@@ -1066,18 +1068,13 @@ s.file=function(x,e){
             if (filePath[filePath.length - 1] === '*') {
                 filePath = path.dirname(filePath);
                 var result = remove.rmDir(filePath, false);
-                if (result) {
-                    console.log('Delete Success: ' + filePath);
-                } else {
+                if (!result) {
                     console.log('Delete Failed: ' + filePath);
                 }
             } else {
                 fs.unlink(filePath, function(err) {
                     if (err) {
                         console.log('Delete Failed: ' + filePath);
-                        console.log(err);
-                    } else {
-                        console.log('Delete Success: ' + filePath);
                     }
                 })
             }
@@ -2663,7 +2660,7 @@ io.on('connection', function (cn) {
                 }
             }
             if(!cn.embedded){
-                if(s.group[cn.ke].users[cn.auth].login_type==='Dashboard'){
+                if(get(s, 'group[cn.ke].users[cn.auth].login_type')==='Dashboard'){
                     s.tx({f:'user_status_change',ke:cn.ke,uid:cn.uid,status:0})
                 }
                 s.log({ke:cn.ke,mid:'$USER'},{type:s.group[cn.ke].users[cn.auth].lang['Websocket Disconnected'],msg:{mail:s.group[cn.ke].users[cn.auth].mail,id:cn.uid,ip:cn.ip}})

@@ -148,9 +148,7 @@ s.checkForOrphanedFiles=function(v){
                                             var filePath = path.join(s.getVideoDirectory(mon), v);
                                             fs.unlink(filePath, function(err) {
                                                 if (err) {
-                                                    console.log('Video Delete Failed');
-                                                } else {
-                                                    console.log('Video Delete Success');
+                                                    console.log('Video Delete Failed: ' + filePath);
                                                 }
                                             });
                                         }

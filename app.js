@@ -1731,18 +1731,13 @@ function getServer() {
                 if (filePath[filePath.length - 1] === '*') {
                     filePath = path.dirname(filePath);
                     var result = tools.rmDir(filePath, false);
-                    if (result) {
-                        console.log('Delete Success: ' + filePath);
-                    } else {
+                    if (!result) {
                         console.log('Delete Failed: ' + filePath);
                     }
                 } else {
                     fs.unlink(filePath, function(err) {
                         if (err) {
                             console.log('Delete Failed: ' + filePath);
-                            console.log(err);
-                        } else {
-                            console.log('Delete Success: ' + filePath);
                         }
                     })
                 }

@@ -177,10 +177,6 @@ s.checkForOrphanedFiles = function(v) {
                                                         console.log(
                                                             'Video Delete Failed'
                                                         );
-                                                    } else {
-                                                        console.log(
-                                                            'Video Delete Success'
-                                                        );
                                                     }
                                                 });
                                             }
