@@ -3545,8 +3545,8 @@ app.all(['/:auth/configureMonitor/:ke/:id','/:auth/configureMonitor/:ke/:id/:f']
                 if(!req.monitor || !req.monitor.details){
                     req.ret.msg=user.lang.monitorEditText1;
                     res.end(s.s(req.ret, null, 3))
+                    return;
                 }
-                return
             }
             if(!user.details.sub||user.details.allmonitors==='1'||user.details.monitor_edit.indexOf(req.monitor.mid)>-1){
                     if(req.monitor&&req.monitor.mid&&req.monitor.name){
