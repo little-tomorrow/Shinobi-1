@@ -113,7 +113,7 @@ $(document).ready(function(){
                     case'jpeg':
                         d.mon=$.shinobi.mon[d.id]
                         k=d.mon.details;
-                        k.jpegInterval=parseFloat(k.jpegInterval);
+                        k.jpegInterval=parseFloat(k.stream_fps);
                         if(!k.jpegInterval||k.jpegInterval===''||isNaN(k.jpegInterval)){k.jpegInterval=1}
                         if(!$.shinobi.mon[d.mon.mid].jpegInterval){
                             clearInterval($.shinobi.mon[d.mon.mid].jpegInterval);
