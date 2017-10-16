@@ -102,6 +102,15 @@ CREATE TABLE IF NOT EXISTS `Videos` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Data exporting was unselected.
+-- Dumping structure for table ccio.Videos_analysis
+CREATE TABLE IF NOT EXISTS `Videos_analysis` (
+  `mid` varchar(50) DEFAULT NULL,
+  `video_time` timestamp NULL DEFAULT NULL,
+  `ke` varchar(50) DEFAULT NULL,
+  `details` longtext DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Data exporting was unselected.
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
