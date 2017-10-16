@@ -573,5 +573,7 @@
    "cuvid": "cuvid (NVIDIA NVENC)",
    "Main": "Main",
    "Storage Location": "Storage Location",
-   "Recommended": "Recommended"
+   "Recommended": "Recommended",
+
+   "Record Video Analyzation": "Record Video Analyzation"
 }

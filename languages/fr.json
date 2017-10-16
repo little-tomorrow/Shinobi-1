@@ -492,5 +492,7 @@
   "total": "total",
   "updateKeyText1": "\"updateKey\" est manquant à partir de \"conf.json\", ne peut pas faire les mises à jour de cette façon jusqu'à ce que vous l'ajouter.",
   "updateKeyText2": "\"updateKey\" est incorrecte.",
-  "years": "ans"
+  "years": "ans",
+
+  "Record Video Analyzation": "Enregistrer l'analyse vidéo"
 }

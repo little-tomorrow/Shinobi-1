@@ -493,5 +493,7 @@
   "undefined": "غير معرف",
   "updateKeyText1": "\"updateKey\" مفقود من \"conf.json\", لا يمكن أن تفعل التحديثات هذه الطريقة حتى يمكنك إضافته.",
   "updateKeyText2": "\"updateKey\" غير صحيحة.",
-  "years": "سنوات"
+  "years": "سنوات",
+
+  "Record Video Analyzation": "سجل فيديو تحليل"
 }

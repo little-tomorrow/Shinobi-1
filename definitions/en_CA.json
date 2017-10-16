@@ -605,7 +605,24 @@
                   "default": "",
                   "example": "",
                   "possible": ""
-               }
+               },
+               {
+                "name": "detail=is_video_analysis",
+                "field": "Record Video Analysis",
+                "description": "",
+                "default": "No",
+                "example": "",
+                "possible": [
+                    {
+                       "name": "No",
+                       "info": ""
+                    },
+                    {
+                       "name": "Yes",
+                       "info": ""
+                    }
+                 ]
+             }
             ]
          },
          "Timestamp": {

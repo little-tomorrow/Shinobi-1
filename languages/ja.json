@@ -492,5 +492,7 @@
   "total": "合計",
   "updateKeyText1": "\"updateKey\"が\"confです。json\"になるんで更新するまでに追加します。",
   "updateKeyText2": "\"updateKey\"が間違っています。",
-  "years": "年"
+  "years": "年",
+
+  "Record Video Analyzation": "ビデオ分析を記録する"
 }

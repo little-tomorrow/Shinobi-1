@@ -137,8 +137,6 @@ s.checkForOrphanedFiles = function(v) {
         })
             .then(function(b) {
                 b.forEach(function(mon, m) {
-                    // FIXME: 不知道下面这行作者是要做什么，但是为了使用 fs，先将其注释
-                    // mon.dir=s.
                     (function(mo) {
                         fs.readdir(s.getVideoDirectory(mo), function(err, items) {
                             let e = {};

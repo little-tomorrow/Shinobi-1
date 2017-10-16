@@ -487,10 +487,12 @@
   "startUpText3": "等着给未完成的视频检查一些时间。 3秒钟。",
   "startUpText4": "开始的所有监视器组，以观察和记录",
   "startUpText5": "忍者已准备就绪。",
-  "superAdminText": "\"超级。json\"不存在。 请重新命名\"超级。样品。json\"到\"超级。json\"。",
+  "superAdminText": "\"超级.json\"不存在。 请重新命名\"超级。样品。json\"到\"超级.json\"。",
   "superAdminTitle": "忍:超级管理员",
   "total": "总",
   "updateKeyText1": "\"updateKey\"缺失\"conf.json\"，无法做更新这样直到你加入它。",
   "updateKeyText2": "\"updateKey\"是不正确的。",
-  "years": "年"
+  "years": "年",
+
+  "Record Video Analyzation": "监控视频分析"
 }

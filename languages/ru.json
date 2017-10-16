@@ -492,5 +492,7 @@
   "total": "общая",
   "updateKeyText1": "\"updateKey\" отсутствует \"конф.с json\", нельзя делать обновление таким образом, пока вы не добавите его.",
   "updateKeyText2": "\"updateKey\" - это неправильно.",
-  "years": "лет"
+  "years": "лет",
+
+  "Record Video Analyzation": "Запись видеоанализа"
 }

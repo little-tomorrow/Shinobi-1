@@ -508,7 +508,7 @@
 <!--     END of JPEG     -->
 <!--     Start of Record     -->
           <div class="form-group-group red h_m_input h_m_record h_m_idle" section id="monSectionRecording">
-          <h4><%-lang['Recording']%></h4>
+            <h4><%-lang['Recording']%></h4>
               <blockquote class="global_tip">
                 <%-lang.RecordingText%>
               </blockquote>
@@ -517,7 +517,7 @@
                     <div><select class="form-control" name="ext" selector="h_f">
                         <option value="webm"><%-lang['WebM (libvpx)']%></option>  
                         <option value="mp4"><%-lang['MP4 (copy, libx264, libx265)']%></option>  
-    <!--                    <option value="mkv">MKV</option>  -->
+                        <!-- <option value="mkv">MKV</option>  -->
                     </select></div>
                 </label>
               </div>
@@ -631,6 +631,14 @@
                   <div class="form-group">
                     <label><div><span><%-lang['Record Video Filter']%></span></div>
                     <div><input class="form-control" detail="vf"></div>
+                    </label>
+                  </div>
+                  <div class="form-group">
+                    <label><div><span><%-lang['Record Video Analyzation']%></span></div>
+                        <div><select class="form-control" detail="is_video_analysis">
+                            <option value="0" selected><%-lang.No%></option>
+                            <option value="1"><%-lang.Yes%></option>
+                        </select></div>
                     </label>
                   </div>
               </div>

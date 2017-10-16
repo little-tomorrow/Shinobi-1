@@ -493,5 +493,7 @@
   "undefined": "nicht definiert",
   "updateKeyText1": "Kein \"updateKey\" in \"conf.json\" vorhanden. Es werden keine Updates durchgeführt.",
   "updateKeyText2": "\"updateKey\" ist falsch.",
-  "years": "Jahre"
+  "years": "Jahre",
+
+  "Record Video Analyzation": "Video-Analyse aufzeichnen"
 }

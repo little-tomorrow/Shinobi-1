@@ -492,5 +492,7 @@
   "total": "মোট",
   "updateKeyText1": "\"updateKey\" থেকে অনুপস্থিত, \"conf.json\", আপডেট করতে পারবেন না এই ভাবে যতক্ষণ না আপনি এটি যোগ করুন.",
   "updateKeyText2": "\"updateKey\" ভুল হয়.",
-  "years": "বছর"
+  "years": "বছর",
+
+  "Record Video Analyzation": "রেকর্ড ভিডিও বিশ্লেষণ"
 }

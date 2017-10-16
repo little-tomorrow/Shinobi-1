@@ -376,10 +376,14 @@ if(!config.streamDir){
     }
 }
 if(!config.videosDir){config.videosDir=__dirname+'/videos/'}
+if (!config.imagesDir) {
+    config.imagesDir = __dirname + '/images/';
+}
 if(!config.addStorage){config.addStorage=[]}
 s.dir={
     videos:s.checkCorrectPathEnding(config.videosDir),
     streams:s.checkCorrectPathEnding(config.streamDir),
+    images:s.checkCorrectPathEnding(config.imagesDir),
     addStorage:config.addStorage,
     languages:location.languages+'/'
 };
@@ -3775,6 +3779,74 @@ app.get('/:auth/videos/:ke/:id/:file', function (req,res){
         })
     },res,req);
 });
+
+// get image file
+app.get('/:auth/images/:ke/:id/:file', function(req, res) {
+    s.auth(req.params,function(user){
+        if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors.indexOf(req.params.id)===-1){
+            res.end(user.lang['Not Permitted'])
+            return
+        }
+        req.dir=path.join(s.dir.images, req.params.ke, req.params.id, req.params.file);
+        if (fs.existsSync(req.dir)){
+            res.sendFile(req.dir)
+        }else{
+            res.end(user.lang['File Not Found'])
+        }
+    },res,req);
+})
+
+// get video analysis result by videoName
+app.get('/:auth/videos_analysis/:ke/:id/:videoName', function(req, resp) {
+    s.auth(req.params, function(user) {
+        if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.video_view.indexOf(req.params.id)===-1){
+            res.end(s.s([]))
+            return
+        }
+        sql.query(
+            'SELECT * FROM Videos_analysis WHERE ke=? AND mid=? AND video_time=?',
+            [req.params.ke, req.params.id, tools.nameToTime(req.params.videoName)],
+            function(err, rows) {
+                if (rows) {
+                    res.end(JSON.stringify(rows))
+                }
+            }
+        )
+    }, res, req)
+})
+
+// get video analysis result by time
+app.get('/:auth/videos_analysis/:ke/:id', function(req, resp) {
+    s.auth(req.params, function(user) {
+        if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors.indexOf(req.params.id)===-1){
+            res.end([])
+            return
+        }
+        var startTime = req.query.start_time.replace('T',' ');
+        var endTime = req.query.end_time.replace('T',' ');
+
+        var sqlValue = [req.params.ke, req.params.id];
+        var sqlString = '';
+        if (startTime) {
+            sqlValue.push(startTime);
+            sqlString += ' AND video_time>=?';
+        }
+        if (endTime) {
+            sqlValue.push(endTime);
+            sqlString += ' AND video_time<=?';
+        }
+        sql.query(
+            `SELECT * FROM Videos_analysis WHERE ke=? AND mid=?${sqlString}`,
+            sqlValue,
+            function(err, rows) {
+                if (rows) {
+                    res.end(JSON.stringify(rows));
+                }
+            }
+        )
+    }, res, req)
+});
+
 //motion trigger
 app.get('/:auth/motion/:ke/:id', function (req,res){
     s.auth(req.params,function(user){

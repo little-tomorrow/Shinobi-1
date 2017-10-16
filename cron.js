@@ -121,8 +121,6 @@ s.checkForOrphanedFiles=function(v){
     if(config.cron.deleteOrphans===true){
         sql.query('SELECT * FROM Monitors WHERE ke=?',[v.ke],function(arr,b) {
             b.forEach(function(mon,m){
-                // FIXME: 不知道下面这行作者是要做什么，但是为了使用 fs，先将其注释
-                // mon.dir=s.
                 (function(mon) {
                     fs.readdir(s.getVideoDirectory(mon), function(err, items) {
                         var e = {};
