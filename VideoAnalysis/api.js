@@ -31,4 +31,15 @@ module.exports = {
             callback
         );
     },
+    deleleImages(imageNames, callback) {
+        return fetch(
+            {
+                url: '/images/delete',
+                method: 'POST',
+                json: true,
+                body: { image_names: imageNames }
+            },
+            callback
+        );
+    }
 };

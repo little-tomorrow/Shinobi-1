@@ -270,10 +270,9 @@ function init(dir, callback, filter) {
     walk(dir, callback, filter);
 }
 
-
 init(video.videosDir, (data) => {
     if (data.fstype === 'file' && data.type === 'create') {
-        var { groupKey, monitorId } = tools.getKeAndMidByVideoPath(data.parent);
+        const { groupKey, monitorId } = tools.getKeAndMidByVideoPath(data.parent);
         checkIsAnalysis(groupKey, monitorId, function() {
             sql.query(
                 'SELECT * FROM Videos WHERE ke=? AND mid=? ORDER BY `time` DESC',
@@ -302,5 +301,46 @@ init(video.videosDir, (data) => {
                 }
             );
         })
+    } else if (data.fstype === 'file' && data.type === 'delete') {
+        const { groupKey, monitorId } = tools.getKeAndMidByVideoPath(data.parent);
+        sql.query(
+            'SELECT * FROM Videos_analysis WHERE ke=? and mid=? and video_time=?',
+            [groupKey, monitorId, tools.nameToTime(data.target)],
+            function(err, rows) {
+                if (rows && rows[0]) {
+                    const detail = JSON.parse(rows[0].details);
+
+                    const imageNames = [path.basename(detail.bg.bg)];
+                    
+                    Object.keys(detail.result).forEach(key => {
+                        if (detail.result[key].length > 0) {
+                            detail.result[key].forEach(e => {
+                                var info = e.info.forEach(element => {
+                                    imageNames.push(element.name);
+                                });
+                            });
+                        }
+                    });
+
+                    imageNames.forEach((name) => {
+                        const imagePath = path.join(video.imagesDir, groupKey, monitorId, name);
+                        if (fs.existsSync(imagePath)) {
+                            fs.unlink(imagePath, function(err) {
+                                if (err) {
+                                    console.log('image Delete Failed: ' + imagePath);
+                                }
+                            })
+                        }
+                    })
+                    
+                    api.deleleImages(imageNames)
+
+                    sql.query(
+                        'DELETE FROM Videos_analysis WHERE ke=? and mid=? and video_time=?',
+                        [groupKey, monitorId, tools.nameToTime(data.target)]
+                    )
+                }
+            }
+        )
     }
 });
