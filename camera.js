@@ -3797,7 +3797,7 @@ app.get('/:auth/images/:ke/:id/:file', function(req, res) {
 })
 
 // get video analysis result by videoName
-app.get('/:auth/videos_analysis/:ke/:id/:videoName', function(req, resp) {
+app.get('/:auth/videos_analysis/:ke/:id/:videoName', function(req, res) {
     s.auth(req.params, function(user) {
         if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.video_view.indexOf(req.params.id)===-1){
             res.end(s.s([]))
@@ -3816,7 +3816,7 @@ app.get('/:auth/videos_analysis/:ke/:id/:videoName', function(req, resp) {
 })
 
 // get video analysis result by time
-app.get('/:auth/videos_analysis/:ke/:id', function(req, resp) {
+app.get('/:auth/videos_analysis/:ke/:id', function(req, res) {
     s.auth(req.params, function(user) {
         if(user.permissions.watch_videos==="0"||user.details.sub&&user.details.allmonitors!=='1'&&user.details.monitors.indexOf(req.params.id)===-1){
             res.end([])
