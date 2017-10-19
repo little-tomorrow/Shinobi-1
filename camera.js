@@ -3787,7 +3787,7 @@ app.get('/:auth/images/:ke/:id/:file', function(req, res) {
             res.end(user.lang['Not Permitted'])
             return
         }
-        req.dir=path.join(s.dir.images, req.params.ke, req.params.id, req.params.file);
+        req.dir=path.join(s.dir.images, req.params.file);
         if (fs.existsSync(req.dir)){
             res.sendFile(req.dir)
         }else{

@@ -113,9 +113,9 @@ function getVideoAnalysis(videoName, videoPath) {
             body.result = result;
 
             // save analysis image
-            allImageAddress.forEach(address => {
-                tools.downloadFile(`${api.videoAnalysisUrl}${address}`, imageFullDir);
-            });
+            // allImageAddress.forEach(address => {
+            //     tools.downloadFile(`${api.videoAnalysisUrl}${address}`, imageFullDir);
+            // });
 
             // save analysis result
             saveResult(path.parse(videoName).name, videoPath, JSON.stringify(body));
@@ -257,7 +257,7 @@ function watch(name, callback, filter) {
  * @param {Function} callback 文件、目录改变后的回调函数
  * @param {Function} [filter] 过滤器（可选）
  */
-function init(dir, callback, filter) {
+function startWatch(dir, callback, filter) {
     // 排除“.”、“_”开头或者非英文命名的目录
     var FILTER_RE = /[^\w\.\-$]/;
     filter =
@@ -270,7 +270,7 @@ function init(dir, callback, filter) {
     walk(dir, callback, filter);
 }
 
-init(video.videosDir, (data) => {
+startWatch(video.videosDir, (data) => {
     if (data.fstype === 'file' && data.type === 'create') {
         const { groupKey, monitorId } = tools.getKeAndMidByVideoPath(data.parent);
         checkIsAnalysis(groupKey, monitorId, function() {
