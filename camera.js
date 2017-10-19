@@ -3805,7 +3805,7 @@ app.get('/:auth/videos_analysis/:ke/:id/:videoName', function(req, res) {
         }
         sql.query(
             'SELECT * FROM Videos_analysis WHERE ke=? AND mid=? AND video_time=?',
-            [req.params.ke, req.params.id, tools.nameToTime(req.params.videoName)],
+            [req.params.ke, req.params.id, s.nameToTime(req.params.videoName)],
             function(err, rows) {
                 if (rows) {
                     res.end(JSON.stringify(rows))
