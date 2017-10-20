@@ -3837,7 +3837,7 @@ app.get('/:auth/videos_analysis/:ke/:id', function(req, res) {
             sqlString += ' AND video_time<=?';
         }
         sql.query(
-            `SELECT * FROM Videos_analysis WHERE ke=? AND mid=?${sqlString} ORDER BY video_time ASC'`,
+            `SELECT * FROM Videos_analysis WHERE ke=? AND mid=?${sqlString} ORDER BY video_time ASC`,
             sqlValue,
             function(err, rows) {
                 if (rows) {
