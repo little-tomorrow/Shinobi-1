@@ -112,6 +112,7 @@ function getVideoAnalysis(videoName, videoPath) {
 
             body.result = result;
 
+            // FIXME: 多个视频分析任务会阻塞图片下载，现在先改为从视频分析文件夹下的图片文件夹中读取文件，以后修复为下载
             // save analysis image
             // allImageAddress.forEach(address => {
             //     tools.downloadFile(`${api.videoAnalysisUrl}${address}`, imageFullDir);

@@ -3787,6 +3787,7 @@ app.get('/:auth/images/:ke/:id/:file', function(req, res) {
             res.end(user.lang['Not Permitted'])
             return
         }
+        // FIXME: 多个视频分析任务会阻塞图片下载，现在先改为从视频分析文件夹下的图片文件夹中读取文件，以后修复为下载
         req.dir=path.join(s.dir.images, req.params.file);
         if (fs.existsSync(req.dir)){
             res.sendFile(req.dir)
@@ -3836,7 +3837,7 @@ app.get('/:auth/videos_analysis/:ke/:id', function(req, res) {
             sqlString += ' AND video_time<=?';
         }
         sql.query(
-            `SELECT * FROM Videos_analysis WHERE ke=? AND mid=?${sqlString}`,
+            `SELECT * FROM Videos_analysis WHERE ke=? AND mid=?${sqlString} ORDER BY video_time ASC'`,
             sqlValue,
             function(err, rows) {
                 if (rows) {
