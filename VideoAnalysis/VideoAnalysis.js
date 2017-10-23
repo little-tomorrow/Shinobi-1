@@ -87,8 +87,11 @@ function getVideoAnalysis(videoName, videoPath) {
         body = JSON.parse(body);
 
         if (body.all_label_list.length > 0) {
-            var { groupKey, monitorId } = tools.getKeAndMidByVideoPath(videoPath);
-            var imageFullDir = path.join(video.imagesDir, groupKey, monitorId);
+            var { groupKey, monitorId } = tools.getKeAndMidByVideoPath(
+                videoPath
+            );
+            // var imageFullDir = path.join(video.imagesDir, groupKey, monitorId);
+            var imageFullDir = path.join(video.imagesDir);
 
             var allImageAddress = [body.bg.bg];
 
@@ -119,7 +122,11 @@ function getVideoAnalysis(videoName, videoPath) {
             // });
 
             // save analysis result
-            saveResult(path.parse(videoName).name, videoPath, JSON.stringify(body));
+            saveResult(
+                path.parse(videoName).name,
+                videoPath,
+                JSON.stringify(body)
+            );
         }
     });
 }
@@ -138,12 +145,12 @@ function saveResult(videoName, videoPath, result) {
                 sql.query(
                     'INSERT INTO Videos_analysis (ke,mid,video_time,details) VALUES (?,?,?,?)',
                     [groupKey, monitorId, videoTime, result]
-                )
+                );
             } else {
                 sql.query(
                     `UPDATE Videos_analysis SET details=? WHERE ke=? and mid=? and video_time=?`,
                     [result, groupKey, monitorId, videoTime]
-                )
+                );
             }
         }
     );
@@ -155,13 +162,16 @@ function checkIsAnalysis(groupKey, monitorId, callback) {
         [groupKey, monitorId],
         function(err, rows) {
             if (rows && rows[0]) {
-                var details = JSON.parse(rows[0].details)
-                if (rows[0].mode === 'record' && details.is_video_analysis === '1') {
-                    callback()
+                var details = JSON.parse(rows[0].details);
+                if (
+                    rows[0].mode === 'record' &&
+                    details.is_video_analysis === '1'
+                ) {
+                    callback();
                 }
             }
         }
-    )
+    );
 }
 
 var watchList = {};
@@ -271,9 +281,11 @@ function startWatch(dir, callback, filter) {
     walk(dir, callback, filter);
 }
 
-startWatch(video.videosDir, (data) => {
+startWatch(video.videosDir, data => {
     if (data.fstype === 'file' && data.type === 'create') {
-        const { groupKey, monitorId } = tools.getKeAndMidByVideoPath(data.parent);
+        const { groupKey, monitorId } = tools.getKeAndMidByVideoPath(
+            data.parent
+        );
         checkIsAnalysis(groupKey, monitorId, function() {
             sql.query(
                 'SELECT * FROM Videos WHERE ke=? AND mid=? ORDER BY `time` DESC',
@@ -286,7 +298,7 @@ startWatch(video.videosDir, (data) => {
                                 data.parent,
                                 `${tools.moment(video.time)}.${video.ext}`
                             ),
-                            (err) => {
+                            err => {
                                 if (err) {
                                     console.log('video no access');
                                     return;
@@ -301,9 +313,11 @@ startWatch(video.videosDir, (data) => {
                     }
                 }
             );
-        })
+        });
     } else if (data.fstype === 'file' && data.type === 'delete') {
-        const { groupKey, monitorId } = tools.getKeAndMidByVideoPath(data.parent);
+        const { groupKey, monitorId } = tools.getKeAndMidByVideoPath(
+            data.parent
+        );
         sql.query(
             'SELECT * FROM Videos_analysis WHERE ke=? and mid=? and video_time=?',
             [groupKey, monitorId, tools.nameToTime(data.target)],
@@ -312,36 +326,76 @@ startWatch(video.videosDir, (data) => {
                     const detail = JSON.parse(rows[0].details);
 
                     const imageNames = [path.basename(detail.bg.bg)];
-                    
+
                     Object.keys(detail.result).forEach(key => {
-                        if (detail.result[key].length > 0) {
-                            detail.result[key].forEach(e => {
-                                var info = e.info.forEach(element => {
-                                    imageNames.push(element.name);
-                                });
+                        detail.result[key].forEach(e => {
+                            var info = e.info.forEach(element => {
+                                imageNames.push(element.name);
                             });
-                        }
+                        });
                     });
 
-                    imageNames.forEach((name) => {
-                        const imagePath = path.join(video.imagesDir, groupKey, monitorId, name);
-                        if (fs.existsSync(imagePath)) {
-                            fs.unlink(imagePath, function(err) {
-                                if (err) {
-                                    console.log('image Delete Failed: ' + imagePath);
-                                }
-                            })
-                        }
-                    })
-                    
-                    api.deleleImages(imageNames)
+                    deleleLocalImages(imageNames);
+
+                    api.deleleImages(imageNames);
 
                     sql.query(
                         'DELETE FROM Videos_analysis WHERE ke=? and mid=? and video_time=?',
                         [groupKey, monitorId, tools.nameToTime(data.target)]
-                    )
+                    );
                 }
             }
-        )
+        );
     }
 });
+
+function deleleLocalImages(imageNames) {
+    imageNames.forEach(name => {
+        const imagePath = path.join(video.imagesDir, name);
+        if (fs.existsSync(imagePath)) {
+            fs.unlink(imagePath, function(err) {
+                if (err) {
+                    console.log('image Delete Failed: ' + imagePath);
+                }
+            });
+        }
+    });
+}
+
+// delete old image
+const clearImage = () => {
+    sql.query('SELECT details FROM Videos_analysis', function(err, rows) {
+        if (rows && rows[0]) {
+            const currImages = [];
+            rows.forEach(row => {
+                const detail = JSON.parse(row.details);
+                currImages.push(path.basename(detail.bg.bg));
+                Object.keys(detail.result).forEach(key => {
+                    detail.result[key].forEach(e => {
+                        var info = e.info.forEach(element => {
+                            currImages.push(element.name);
+                        });
+                    });
+                });
+            });
+
+            fs.readdirSync(video.imagesDir).forEach(item => {
+                var fullname = path.join(video.imagesDir, item);
+                if (
+                    !currImages.includes(item) &&
+                    fs.statSync(fullname).isFile()
+                ) {
+                    fs.unlink(fullname, function(err) {
+                        if (err) {
+                            console.log('image Delete Failed: ' + fullname);
+                        }
+                    });
+                }
+            });
+        }
+    });
+
+    setTimeout(clearImage, 1000 * 60 * 60 * 24);
+};
+
+clearImage();
