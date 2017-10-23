@@ -19,7 +19,11 @@ if (!config.videosDir) {
 if (!config.imagesDir) {
     video.imagesDir = path.join(__dirname, '../images/');
 } else {
-    video.imagesDir = path.join(__dirname, '../', config.imagesDir);
+    if (path.isAbsolute(config.imagesDir)) {
+        video.imagesDir = config.imagesDir;
+    } else {
+        video.imagesDir = path.join(__dirname, '../', config.imagesDir);
+    }
 }
 video.language = config.language || 'en_CA';
 
