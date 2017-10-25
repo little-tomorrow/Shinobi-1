@@ -2667,7 +2667,7 @@ io.on('connection', function (cn) {
                 if(get(s, 'group[cn.ke].users[cn.auth].login_type')==='Dashboard'){
                     s.tx({f:'user_status_change',ke:cn.ke,uid:cn.uid,status:0})
                 }
-                s.log({ke:cn.ke,mid:'$USER'},{type:s.group[cn.ke].users[cn.auth].lang['Websocket Disconnected'],msg:{mail:s.group[cn.ke].users[cn.auth].mail,id:cn.uid,ip:cn.ip}})
+                s.log({ke:cn.ke,mid:'$USER'},{type: get(s, "group[cn.ke].users[cn.auth].lang['Websocket Disconnected']", ''),msg:{mail:s.group[cn.ke].users[cn.auth].mail,id:cn.uid,ip:cn.ip}})
                 delete(s.group[cn.ke].users[cn.auth]);
             }
         }
