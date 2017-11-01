@@ -4062,3 +4062,27 @@ setTimeout(function(){
         }
     })
 },1500)
+
+setInterval(function() {
+    // FIXME: 监控视频每天去重设一下才能解决花屏的问题，现在无法找到原因
+    sql.query('SELECT * FROM Monitors', function(err, rows) {
+        if (rows && rows[0]) {
+            rows.forEach((row) => {
+                let monitor = row;
+                if (monitor.mode !== 'stop') {
+                    if (s.group[monitor.ke]&&s.group[monitor.ke].mon[monitor.mid]&&s.group[monitor.ke].mon[monitor.mid].started===1) {
+                        const req = {};
+                        monitor.mid=monitor.mid.replace(/[^\w\s]/gi,'').replace(/ /g,'');
+                        req.tx={f:'monitor_edit',mid:monitor.mid,ke:monitor.ke,mon:monitor};
+                        monitor.details=JSON.parse(monitor.details)
+                        s.init(0,{mid:monitor.mid,ke:monitor.ke});
+                        s.group[monitor.ke].mon_conf[monitor.mid]=s.init('noReference',monitor);
+                        s.camera('stop',monitor);setTimeout(function(){s.camera(monitor.mode,monitor);},5000)
+                        s.tx(req.tx,'STR_'+monitor.ke);
+                        s.tx(req.tx,'GRP_'+monitor.ke);
+                    }
+                }
+            })
+        }
+    })
+}, 1000 * 60 * 60 * 24)

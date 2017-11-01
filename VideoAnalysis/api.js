@@ -2,7 +2,23 @@ var request = require('request');
 
 var config = require('../conf.json');
 
-const videoAnalysisUrl = config.videoAnalysisUrl || 'http://localhost:5000';
+let baseUrl = '';
+if (config.ssl&&config.ssl.key&&config.ssl.cert) {
+    baseUrl += 'https://';
+} else {
+    baseUrl += 'http://';
+}
+if (
+    config.ip === undefined ||
+    config.ip === '' ||
+    config.ip.indexOf('0.0.0.0') > -1
+) {
+    baseUrl += 'localhost';
+} else {
+    baseUrl += config.ip;
+}
+const videoAnalysisUrl = config.videoAnalysisUrl || `${baseUrl}:5000`;
+console.log(videoAnalysisUrl);
 
 var baseRequest = request.defaults({
     baseUrl: videoAnalysisUrl,
@@ -41,5 +57,5 @@ module.exports = {
             },
             callback
         );
-    }
+    },
 };
