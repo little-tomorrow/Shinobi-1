@@ -18,7 +18,7 @@ if (
     baseUrl += config.ip;
 }
 const videoAnalysisUrl = config.videoAnalysisUrl || `${baseUrl}:5000`;
-console.log(videoAnalysisUrl);
+console.log('videoAnalysisUrl: ', videoAnalysisUrl);
 
 var baseRequest = request.defaults({
     baseUrl: videoAnalysisUrl,
