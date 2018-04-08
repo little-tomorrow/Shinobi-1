@@ -2748,10 +2748,10 @@ s.superAuth=function(x,callback){
                 req.found=1;
                 if(x.users===true){
                     sql.query('SELECT * FROM Users WHERE details NOT LIKE ?',['%"sub"%'],function(err,r) {
-                        callback({$user:v,users:r,config:config,lang:lang})
+                        callback && callback({$user:v,users:r,config:config,lang:lang})
                     })
                 }else{
-                    callback({$user:v,config:config,lang:lang})
+                    callback && callback({$user:v,config:config,lang:lang})
                 }
             }
         })(v)
@@ -3523,6 +3523,58 @@ app.get('/:auth/smonitor/:ke', function (req,res){
     }
     s.auth(req.params,req.fn,res,req);
 });
+// user add
+app.post('/:mail/adduser/:password',
+    function(req, res) {
+        req.ret={ok:false};
+        res.setHeader('Content-Type', 'application/json');
+        res.header("Access-Control-Allow-Origin",req.headers.origin);
+        if (s.superAuth({ mail: req.params.mail, pass: req.params.password, md5: true })) {
+            if (!req.body.data) {
+                req.ret.msg='No Data found.'
+                res.end(s.s(req.ret, null, 3))
+                return
+            }
+            try{
+                if(req.query.data){
+                    req.user=JSON.parse(req.query.data)
+                }else{
+                    req.user=JSON.parse(req.body.data)
+                }
+            }catch(er){
+                req.user = req.body.data;
+                if(!req.user || !req.user.details){
+                    req.ret.msg=user.lang.monitorEditText1;
+                    res.end(s.s(req.ret, null, 3))
+                    return;
+                }
+            }
+            try{
+                JSON.parse(req.monitor.details)
+            }catch(er){
+                if(!req.user.details||!req.user.details.stream_type){
+                    req.ret.msg=user.lang.monitorEditText2;
+                    res.end(s.s(req.ret, null, 3))
+                    return
+                }else{
+                    req.user.details=JSON.stringify(req.user.details)
+                }
+            }
+            req.set=[],req.ar=[];
+            req.st=[];
+            Object.keys(req.user).forEach(function(v){
+                if(req.user[v]&&req.user[v]!==''){
+                    req.set.push(v),req.st.push('?'),req.ar.push(req.user[v]);
+                }
+            })
+            req.set=req.set.join(','),req.st=req.st.join(',');
+            sql.query('INSERT INTO Users ('+req.set+') VALUES ('+req.st+')',req.ar)
+            req.ret.ok = true;
+            req.ret.msg = 'success';
+            res.end(s.s(req.ret, null, 3))
+        }
+    }
+)
 // Monitor Add,Edit,Delete
 app.all(['/:auth/configureMonitor/:ke/:id','/:auth/configureMonitor/:ke/:id/:f'], function (req,res){
     req.ret={ok:false};
